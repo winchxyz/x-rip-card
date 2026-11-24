@@ -82,17 +82,17 @@
   #label .n { font-size: clamp(16px, 3vh, 24px); font-weight: 700; letter-spacing: -.022em; }
   #label .r { margin-top: .5vh; font-size: clamp(10px, 1.6vh, 12px); font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--rc, var(--dim)); }
 
-  /* short landscape frame, e.g. the 16:9 player inside an X post */
-  @media (max-height: 420px) {
-    .ui.top { padding-top: 9px; } .ui.bottom { padding-bottom: 9px; }
-    .eyebrow { font-size: 9px; } .h1 { font-size: 17px; margin-top: 2px; } .sub { font-size: 10px; margin-top: 2px; }
-    #setSub { display: none; }
-    .dots { margin-bottom: 6px; } .dots i { width: 5px; height: 5px; } .dots i.on { width: 16px; }
-    button, .btn { height: 32px; font-size: 12px; padding: 0 1.3em; }
-    .nav { width: 34px; height: 34px; margin-top: -17px; } .nav svg { width: 14px; height: 14px; }
-    .hint { font-size: 11px; } .pips i { width: 16px; }
-    #label .n { font-size: 13px; } #label .r { font-size: 8.5px; margin-top: 1px; }
-  }
+  /* compact: a short frame such as the 16:9 player inside an X post. The scene fills the height, text is few and large. */
+  #setName2 { display: none; }
+  body.compact .ui.top { padding-top: 10px; } body.compact .ui.bottom { padding-bottom: 10px; }
+  body.compact .s-shelf.top, body.compact .dots, body.compact .s-cards.top, body.compact .s-result .eyebrow { display: none; }
+  body.compact #setName2 { display: block; margin-bottom: 7px; font-size: 16px; font-weight: 700; letter-spacing: -.02em; text-shadow: 0 1px 10px rgba(0, 0, 0, .8); }
+  body.compact button, body.compact .btn { height: 36px; font-size: 14px; padding: 0 1.5em; }
+  body.compact .nav { width: 40px; height: 40px; margin-top: -20px; padding: 0; }
+  body.compact .hint { font-size: 14px; text-shadow: 0 1px 8px rgba(0, 0, 0, .9); }
+  body.compact #label .n { font-size: 16px; } body.compact #label .r { font-size: 10px; margin-top: 2px; }
+  body.compact .s-result .h1 { font-size: 18px; margin-top: 0; } body.compact .s-result .sub { font-size: 12px; margin-top: 2px; }
+  body.compact .s-result .row { gap: 8px; } body.compact .s-result button, body.compact .s-result .btn { height: 34px; font-size: 13px; padding: 0 1.3em; }
   #boot { position: fixed; inset: 0; display: grid; place-items: center; font-size: 13px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); transition: opacity .5s; pointer-events: none; }
   body:not([data-s="boot"]) #boot { opacity: 0; }
 </style>
@@ -119,6 +119,7 @@
 <button class="nav" id="prev" aria-label="Previous pack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
 <button class="nav" id="next" aria-label="Next pack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
 <div class="ui bottom s-shelf">
+  <div id="setName2"></div>
   <div class="dots" id="dots"></div>
   <button class="primary" id="open">Open pack</button>
 </div>

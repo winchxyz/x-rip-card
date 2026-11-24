@@ -106,10 +106,21 @@ function resize() {
   camera.aspect = aspect;
   camera.position.set(0, 0, L.h / (2 * Math.tan(THREE.MathUtils.degToRad(FOV / 2))));
   camera.updateProjectionMatrix();
-  L.packS = 0.92; L.packY = 0.05;
-  L.cardS = Math.min(1.14, (L.w * 0.82) / 0.63); L.cardY = 0.15;
-  L.trayS = 0.2; L.trayY = -L.h / 2 + 0.2; L.trayDX = 0.155;
-  $('label').style.top = (h / 2 - (L.cardY - 0.44 * 1.03 * L.cardS) * L.u + h * 0.04) + 'px';
+  // a short frame (the 16:9 player in an X post) gets a layout where the pack and the card fill the height
+  L.compact = h < 440;
+  document.body.classList.toggle('compact', L.compact);
+  const D = camera.position.z;
+  if (L.compact) {
+    L.packS = 1.1; L.packY = 0.2; L.sealS = 1.24; L.sealY = 0.1;
+    L.cardS = 1.4; L.cardY = 0.15; L.trayS = 0.3;
+    L.tray = i => ({ x: L.w / 2 - 0.3, y: 0.62 - i * 0.31 });
+  } else {
+    L.packS = 0.92; L.packY = 0.05; L.sealS = 1; L.sealY = 0.06;
+    L.cardS = Math.min(1.14, (L.w * 0.82) / 0.63); L.cardY = 0.15; L.trayS = 0.2;
+    L.tray = i => ({ x: (i - 2) * 0.155, y: -L.h / 2 + 0.2 });
+  }
+  L.upZ = 0.3; L.mag = D / (D - L.upZ);     // the open card sits closer to the camera and so looks bigger
+  $('label').style.top = (h / 2 - (L.cardY - 0.44 * 1.03 * L.cardS) * L.mag * L.u + h * 0.022) + 'px';
 }
 
 // ================================================================ procedural textures
@@ -395,7 +406,7 @@ const label = $('label');
 let scrollTw = null;
 function shelfUI() {
   const s = SETS[sel];
-  $('setYear').textContent = s.year; $('setName').textContent = s.name; $('setSub').textContent = `${s.cards.length} cards · 5 per pack`;
+  $('setYear').textContent = s.year; $('setName').textContent = s.name; $('setName2').textContent = s.name; $('setSub').textContent = `${s.cards.length} cards · 5 per pack`;
   [...$('dots').children].forEach((d, i) => d.classList.toggle('on', i === sel));
   $('prev').disabled = sel === 0; $('next').disabled = sel === SETS.length - 1;
   tint(s.c[2]);
@@ -458,10 +469,10 @@ function choose() {
   }
   pack = set.pack; resetPack(pack);
   pack.userData.mats.forEach(m => m.color.setScalar(1));
-  if (fromResult) { pack.position.set(0, -2.4, .2); pack.scale.setScalar(1); pack.rotation.set(0, .5, 0); }
-  gsap.to(pack.position, { x: 0, y: 0.06, z: .25, duration: .85, ease: 'expo.out' });
+  if (fromResult) { pack.position.set(0, -2.4, .2); pack.scale.setScalar(L.sealS); pack.rotation.set(0, .5, 0); }
+  gsap.to(pack.position, { x: 0, y: L.sealY, z: .25, duration: .85, ease: 'expo.out' });
   gsap.to(pack.rotation, { x: 0, y: 0, z: 0, duration: .85, ease: 'expo.out' });
-  gsap.to(pack.scale, { x: 1, y: 1, z: 1, duration: .85, ease: 'back.out(1.6)' });
+  gsap.to(pack.scale, { x: L.sealS, y: L.sealS, z: L.sealS, duration: .85, ease: 'back.out(1.6)' });
   pack.userData.tiltX = pack.userData.tiltY = 0;
   gsap.to(backdrop.material.color, { ...rgb(set.c[1], .5), duration: .9, ease: 'power2.out', overwrite: true });
   // deal the cards now so the textures are ready by the time the pack is open
@@ -497,23 +508,23 @@ function open() {
   gsap.to(d.strip.position, { x: tearDir * .9, y: 1.5, z: .5, duration: .7, ease: 'power2.out' });
   gsap.to(d.strip.rotation, { z: -tearDir * 2.2, x: 1.2, duration: .7, ease: 'power1.out', onComplete: () => { d.strip.visible = false; } });
   // light pours out of the mouth
-  const my = wp.y + (VC - .5) * PH;
-  mouth.position.set(wp.x, my, wp.z + .12); mouth.scale.set(.6, .3, 1);
+  const PS = pack.scale.x, my = wp.y + (VC - .5) * PH * PS;
+  mouth.position.set(wp.x, my, wp.z + .12); mouth.scale.set(.6 * PS, .3 * PS, 1);
   gsap.fromTo(mouth.material, { opacity: 0 }, { opacity: .95, duration: .18, ease: 'power2.out' });
-  gsap.to(mouth.scale, { x: 2.6, y: 2.2, duration: .7, ease: 'expo.out' });
+  gsap.to(mouth.scale, { x: 2.6 * PS, y: 2.2 * PS, duration: .7, ease: 'expo.out' });
   gsap.to(mouth.material, { opacity: 0, duration: .9, delay: .45, ease: 'power2.out' });
-  burst(wp.x, my, wp.z + .1, '#ffe2a8', 90, 1.9, { size: .024, rx: PW * .9, spread: Math.PI * .9, dir: Math.PI / 2, decay: .9, gravity: 1.5 });
+  burst(wp.x, my, wp.z + .1, '#ffe2a8', 90, 1.9, { size: .024, rx: PW * .9 * PS, spread: Math.PI * .9, dir: Math.PI / 2, decay: .9, gravity: 1.5 });
   // cards wait inside, slide up through the mouth, then the pack falls away
   cards.forEach((g, i) => {
     g.visible = true; g.userData.moving = true;
-    g.position.set(wp.x, wp.y - .04, wp.z - .004 * i - .002); g.rotation.set(0, Math.PI, 0); g.scale.setScalar(.96);
-    gsap.to(g.position, { y: wp.y + .36 + (cards.length - i) * .012, duration: .6, delay: .12 + i * .035, ease: 'power3.out' });
+    g.position.set(wp.x, wp.y - .04 * PS, wp.z - .004 * i - .002); g.rotation.set(0, Math.PI, 0); g.scale.setScalar(.96 * PS);
+    gsap.to(g.position, { y: wp.y + (L.compact ? .2 : .36) * PS + (cards.length - i) * .012, duration: .6, delay: .12 + i * .035, ease: 'power3.out' });
   });
   gsap.to(wp, { y: -L.h - .4, duration: .7, delay: .5, ease: 'power2.in', onComplete: () => { pack.visible = false; } });
   gsap.to(pack.rotation, { z: -tearDir * .22, duration: .7, delay: .5, ease: 'power2.in' });
   cards.forEach((g, i) => {
     const t = .95 + i * .03;
-    gsap.to(g.position, { x: (i - 2) * .006, y: L.cardY + i * .004, z: .3 - i * .012, duration: .7, delay: t, ease: 'expo.out' });
+    gsap.to(g.position, { x: (i - 2) * .006, y: L.cardY + i * .004, z: .2 - i * .012, duration: .7, delay: t, ease: 'expo.out' });
     gsap.to(g.scale, { x: L.cardS, y: L.cardS, z: L.cardS, duration: .7, delay: t, ease: 'back.out(1.4)' });
     gsap.to(g.rotation, { z: (i ? (Math.random() - .5) * .07 : 0), duration: .7, delay: t });
   });
@@ -545,11 +556,11 @@ function flip(i) {
   const tl = gsap.timeline({ onComplete() { g.userData.up = true; g.userData.moving = false; busy = false; if (c.t >= 3) doSway(); } });
   const S = L.cardS;
   if (big) {  // the card gathers itself before it turns
-    tl.to(g.position, { z: .55, y: L.cardY + .02, duration: .4, ease: 'power2.out' }, 0)
+    tl.to(g.position, { z: L.upZ - .08, y: L.cardY + .02, duration: .4, ease: 'power2.out' }, 0)
       .to(g.scale, { x: S * .94, y: S * .94, z: S * .94, duration: .4, ease: 'power2.inOut' }, 0);
   }
   const t0 = big ? .4 : 0;
-  tl.to(g.position, { x: 0, y: L.cardY, z: .6, duration: .55, ease: 'power3.out' }, t0)
+  tl.to(g.position, { x: 0, y: L.cardY, z: L.upZ, duration: .55, ease: 'power3.out' }, t0)
     .to(g.rotation, { y: 0, z: 0, x: 0, duration: big ? .75 : .6, ease: big ? 'back.out(1.9)' : 'back.out(1.25)' }, t0)
     .to(g.scale, { x: S * 1.03, y: S * 1.03, z: S * 1.03, duration: .6, ease: 'back.out(2)' }, t0);
   tl.call(() => {
@@ -559,7 +570,7 @@ function flip(i) {
     label.classList.add('show');
     if (c.t >= 3) {
       const col = AURA[c.t];
-      burst(0, L.cardY, .7, col, top ? 260 : big ? 150 : 40, top ? 3.2 : big ? 2.4 : 1.3, { size: top ? .03 : .022, rx: CW * S, ry: CH * S, decay: top ? .55 : .8, gravity: .5 });
+      burst(0, L.cardY, L.upZ + .1, col, top ? 260 : big ? 150 : 40, top ? 3.2 : big ? 2.4 : 1.3, { size: top ? .03 : .022, rx: CW * S, ry: CH * S, decay: top ? .55 : .8, gravity: .5 });
       if (big) {
         ring.material.color.set(col); ring.position.set(0, L.cardY, .2); ring.scale.set(.8, .8, 1);
         gsap.fromTo(ring.material, { opacity: .9 }, { opacity: 0, duration: .9, ease: 'power2.out' });
@@ -577,8 +588,8 @@ function next() {
   g.userData.moving = true; g.userData.up = false;
   gsap.killTweensOf(sway); sway.x = sway.y = 0;
   label.classList.remove('show'); setAura(null);
-  const slotX = (cur - (hand.length - 1) / 2) * L.trayDX;
-  gsap.to(g.position, { x: slotX, y: L.trayY, z: 0, duration: .55, ease: 'power3.inOut' });
+  const slot = L.tray(cur);
+  gsap.to(g.position, { x: slot.x, y: slot.y, z: 0, duration: .55, ease: 'power3.inOut' });
   gsap.to(g.rotation, { x: 0, y: 0, z: 0, duration: .55, ease: 'power3.inOut' });
   gsap.to(g.scale, { x: L.trayS, y: L.trayS, z: L.trayS, duration: .55, ease: 'power3.inOut' });
   if (cur === hand.length - 1) { busy = true; gsap.delayedCall(.45, finish); return; }
@@ -586,7 +597,7 @@ function next() {
   if (n === hand.length - 1) {
     cur = n; busy = true;
     const h = cards[n];
-    gsap.to(h.position, { x: 0, y: L.cardY, z: .45, duration: .5, ease: 'power3.out' });
+    gsap.to(h.position, { x: 0, y: L.cardY, z: L.upZ - .1, duration: .5, ease: 'power3.out' });
     gsap.to(h.rotation, { z: 0, duration: .5 });
     gsap.delayedCall(.3, () => { setAura(hand[n], true); busy = false; });
   } else {
@@ -596,7 +607,7 @@ function next() {
 function resultSlots() {
   const n = hand.length, wide = L.w / L.h > 1.05, gap = .045;
   const rows = wide ? [n] : [3, n - 3];
-  const s = Math.min((L.w * .9) / (rows[0] * CW + (rows[0] - 1) * gap), (L.h * (wide ? .46 : .56)) / (rows.length * CH + (rows.length - 1) * gap));
+  const s = Math.min((L.w * .9) / (rows[0] * CW + (rows[0] - 1) * gap), (L.h * (L.compact ? .58 : wide ? .46 : .56)) / (rows.length * CH + (rows.length - 1) * gap));
   const out = []; let y0 = (rows.length - 1) * (CH + gap) * s / 2 + (wide ? 0 : .02);
   for (const cnt of rows) {
     for (let k = 0; k < cnt; k++) out.push({ x: (k - (cnt - 1) / 2) * (CW + gap) * s, y: y0, s });
