@@ -108,7 +108,7 @@ function resize() {
   camera.updateProjectionMatrix();
   const D = camera.position.z;
   L.upZ = 0.3; L.mag = D / (D - L.upZ);     // the open card sits closer to the camera and so looks bigger
-  L.compact = h < 440;                      // little room: fewer and larger things on screen
+  L.compact = h < 520;                      // little room: fewer and larger things on screen
   document.body.classList.toggle('compact', L.compact);
   if (L.compact && aspect > 1.2) {          // short and wide: the tray goes to the side
     L.packS = 1.1; L.packY = 0.2; L.sealS = 1.24; L.sealY = 0.1;
