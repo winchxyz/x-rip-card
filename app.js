@@ -106,20 +106,23 @@ function resize() {
   camera.aspect = aspect;
   camera.position.set(0, 0, L.h / (2 * Math.tan(THREE.MathUtils.degToRad(FOV / 2))));
   camera.updateProjectionMatrix();
-  // a short frame (the 16:9 player in an X post) gets a layout where the pack and the card fill the height
-  L.compact = h < 440;
-  document.body.classList.toggle('compact', L.compact);
   const D = camera.position.z;
-  if (L.compact) {
+  L.upZ = 0.3; L.mag = D / (D - L.upZ);     // the open card sits closer to the camera and so looks bigger
+  L.compact = h < 440;                      // little room: fewer and larger things on screen
+  document.body.classList.toggle('compact', L.compact);
+  if (L.compact && aspect > 1.2) {          // short and wide: the tray goes to the side
     L.packS = 1.1; L.packY = 0.2; L.sealS = 1.24; L.sealY = 0.1;
     L.cardS = 1.4; L.cardY = 0.15; L.trayS = 0.3;
     L.tray = i => ({ x: L.w / 2 - 0.3, y: 0.62 - i * 0.31 });
-  } else {
-    L.packS = 0.92; L.packY = 0.05; L.sealS = 1; L.sealY = 0.06;
-    L.cardS = Math.min(1.14, (L.w * 0.82) / 0.63); L.cardY = 0.15; L.trayS = 0.2;
-    L.tray = i => ({ x: (i - 2) * 0.155, y: -L.h / 2 + 0.2 });
+  } else {                                  // square and tall frames: everything is sized from the frame itself
+    const k = 1.03 * L.mag;
+    L.packS = Math.min(0.6 * L.w / 0.7, (L.compact ? 0.68 : 0.56) * L.h / 1.25); L.packY = (L.compact ? 0.1 : 0.025) * L.h;
+    L.sealS = Math.min(L.packS * 1.14, 0.8 * L.w / 0.7, 0.8 * L.h / 1.25); L.sealY = 0.03 * L.h;
+    L.cardS = Math.min(0.8 * L.w / 0.63, 0.6 * L.h / 0.88) / k;
+    L.cardY = L.h / 2 - (L.compact ? 0.04 : 0.075) * L.h - 0.44 * L.cardS * k;
+    L.trayS = Math.min(0.24, (0.18 * L.w - 0.03) / 0.63);
+    L.tray = i => ({ x: (i - 2) * (0.63 * L.trayS + 0.03), y: -L.h / 2 + 0.06 * L.h + 0.44 * L.trayS });
   }
-  L.upZ = 0.3; L.mag = D / (D - L.upZ);     // the open card sits closer to the camera and so looks bigger
   $('label').style.top = (h / 2 - (L.cardY - 0.44 * 1.03 * L.cardS) * L.mag * L.u + h * 0.022) + 'px';
 }
 
